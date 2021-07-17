@@ -36,18 +36,54 @@ class PuppeteerVideoRecorder {
             '-safe 0',
             `-i ${imagesFilename}`,
             '-framerate 60',
+            '-c:v', 
+            'libx264',
+            '-y', 
+            '-vf', 
+            'format=yuv420p',
+            '-video_track_timescale', 
+            '90000',
             videoFilename
         ].join(' ');
     }
 
     createVideo(ffmpegCommand = '') {
         const _ffmpegCommand = ffmpegCommand || this.defaultFFMpegCommand;
-        exec(_ffmpegCommand, (error, stdout, stderr) => {
-            if (error) throw new Error(error);
-            console.log(stdout);
-            console.log(stderr);
-        });
+        const { videoFilename } = this.fsHandler;
+        return new Promise((resolve, reject) => {
+            exec(_ffmpegCommand, (error, stdout, stderr) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(videoFilename);
+            });
+        })
     }
+
+
+    concatVideo(toConcat, filename) {
+        const { videoFilename, videosTxtFilename, appendToFile } = this.fsHandler;
+        appendToFile(videosTxtFilename, `file '${toConcat}'\nfile '${videoFilename}'`)
+        const command = [
+            pathToFfmpeg,
+            '-safe 0',
+            '-f concat',
+            '-segment_time_metadata 1',
+            `-i ${videosTxtFilename}`,
+            '-vf select=concatdec_select',
+            '-af aselect=concatdec_select,aresample=async=1',
+            filename
+        ].join(' ');
+        return new Promise((resolve, reject) => {
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(videoFilename);
+            });
+        })
+    }
+
 }
 
 module.exports = PuppeteerVideoRecorder;
