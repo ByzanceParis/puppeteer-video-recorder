@@ -1,6 +1,7 @@
 const { FsHandler } = require('./handlers');
 const { exec } = require('child_process');
 const PuppeteerMassScreenshots = require('puppeteer-mass-screenshots');
+const pathToFfmpeg = require('ffmpeg-static');
 
 class PuppeteerVideoRecorder {
     constructor(){
@@ -30,7 +31,7 @@ class PuppeteerVideoRecorder {
     get defaultFFMpegCommand() {
         const { imagesFilename, videoFilename } = this.fsHandler;
         return [
-            'ffmpeg',
+            pathToFfmpeg,
             '-f concat',
             '-safe 0',
             `-i ${imagesFilename}`,
